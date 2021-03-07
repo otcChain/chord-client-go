@@ -1,34 +1,35 @@
 package main
+
 import (
 	"context"
 	"fmt"
 	"github.com/herumi/bls-eth-go-binary/bls"
-	"log"
-	"math/big"
-
 	"github.com/otcChain/chord-go/chain/types"
 	"github.com/otcChain/chord-go/common"
-	"github.com/otcChain/chord-go/rpc/rpc_client"
+	chordclient "github.com/otcChain/chord-go/rpc/rpc_client"
+	"log"
+	"math/big"
 )
 
 func main() {
 
 	client, err := chordclient.Dial("http://127.0.0.1:6666")
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	var privateKey bls.SecretKey
 	err = privateKey.DeserializeHexStr("066c6b1a28955a9089670d1e1386484f7370ef7b4f725876e72d82438de06c9e")
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	publicKey := privateKey.GetPublicKey()
 
 	fromAddress := common.PubKeyToAddr(publicKey)
 	nonce, err := client.PendingNonceAt(context.Background(), fromAddress)
+	fmt.Println(fromAddress)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	value := big.NewInt(1000000000000000000) // in wei (1 eth)
@@ -43,17 +44,17 @@ func main() {
 	//}
 
 	ltx := types.TxData{
-		Nonce:    nonce,
-		To:       &toAddress,
-		Value:    value,
-		Gas:      gasLimit,
-		Data:     data,
-		Price:nil,
+		Nonce: nonce,
+		To:    &toAddress,
+		Value: value,
+		Gas:   gasLimit,
+		Data:  data,
+		Price: nil,
 	}
 	tx := types.NewTx(ltx)
 
-	if err := tx.SignTx(privateKey); err != nil {
-		log.Fatal(err)
+	if err := tx.SignTx(&privateKey); err != nil {
+		panic(err)
 	}
 
 	err = client.SendTransaction(context.Background(), tx)
